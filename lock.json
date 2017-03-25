@@ -1,5 +1,5 @@
 {
-    "memo": "fe3c4edcce0e1d4864571d48268d29002f1268369eb2bfa0ee7c1d80ef5ecf17",
+    "memo": "7f039d3eb81558b717b7cd3af04c689ac0bf81429097f1ccf6521ca64e581702",
     "projects": [
         {
             "name": "github.com/garyburd/redigo",
@@ -13,6 +13,14 @@
             "name": "github.com/gorilla/websocket",
             "version": "v1.1.0",
             "revision": "3ab3a8b8831546bd18fd182c20687ca853b2bb13",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/serialx/hashring",
+            "branch": "master",
+            "revision": "b686d66ce08cf020eda4758a8e42ccdbe8ff8481",
             "packages": [
                 "."
             ]
