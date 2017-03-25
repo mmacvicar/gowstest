@@ -1,11 +1,12 @@
 {
-    "memo": "7f039d3eb81558b717b7cd3af04c689ac0bf81429097f1ccf6521ca64e581702",
+    "memo": "3b9e66bb99fafcc3de1d5532fd2515864feeccf957aad0846e81f8b8203ceaa4",
     "projects": [
         {
             "name": "github.com/garyburd/redigo",
             "version": "v1.0.0",
             "revision": "8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13",
             "packages": [
+                "internal",
                 "redis"
             ]
         },
@@ -13,6 +14,31 @@
             "name": "github.com/gorilla/websocket",
             "version": "v1.1.0",
             "revision": "3ab3a8b8831546bd18fd182c20687ca853b2bb13",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/nats-io/go-nats",
+            "version": "v1.2.2",
+            "revision": "61923ed1eaf8398000991fbbee2ef11ab5a5be0d",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/nats-io/nats",
+            "version": "v1.2.2",
+            "revision": "61923ed1eaf8398000991fbbee2ef11ab5a5be0d",
+            "packages": [
+                "encoders/builtin",
+                "util"
+            ]
+        },
+        {
+            "name": "github.com/nats-io/nuid",
+            "version": "v1.0.0",
+            "revision": "289cccf02c178dc782430d534e3c1f5b72af807f",
             "packages": [
                 "."
             ]
