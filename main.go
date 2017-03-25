@@ -8,57 +8,62 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/garyburd/redigo/redis"
+	//	"github.com/garyburd/redigo/redis"
 	"github.com/gorilla/websocket"
-	"github.com/serialx/hashring"
+	"github.com/nsqio/go-nsq"
 )
 
 var upgrader = websocket.Upgrader{}
-var redisClients map[string]redis.Conn
-var redisPubSubClients map[string]*redis.PubSubConn
 var playerToSocketMap map[string]*websocket.Conn
-var lock sync.RWMutex
-var redisLock sync.RWMutex
-var redisPubSubLock sync.RWMutex
-var ring *hashring.HashRing
+var playerToSocketMapLock sync.RWMutex
+var nsqProducer *nsq.Producer
 
 func clearPlayer(playerID, channel string, c *websocket.Conn) {
-	redisPubSubLock.Lock()
-	redisPubSub := getRedisPubSubForPlayer(playerID)
-	redisPubSub.Unsubscribe(channel)
-	redisPubSubLock.Unlock()
 	c.Close()
-	lock.Lock()
+	playerToSocketMapLock.Lock()
 	delete(playerToSocketMap, playerID)
-	lock.Unlock()
+	playerToSocketMapLock.Unlock()
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	playerID := r.RequestURI[1:]
-	channel := fmt.Sprintf("%s.messages", playerID)
-	redisPubSubLock.Lock()
-	redisPubSub := getRedisPubSubForPlayer(playerID)
-	redisPubSub.Subscribe(channel)
-	redisPubSubLock.Unlock()
+	topic := fmt.Sprintf("%s.messages", playerID)
+	nsqConfig := nsq.NewConfig()
+	nsqConfig.Set("max_in_flight", 50)
+	nsqConsumer, err := nsq.NewConsumer(topic, "messages", nsqConfig)
+	nsqConsumer.AddHandler(nsq.HandlerFunc(func(m *nsq.Message) error {
+		parts := strings.Split(string(m.Body), ",")
+		enemyID := parts[0]
+		playerToSocketMapLock.RLock()
+		if enemySocket, ok := playerToSocketMap[enemyID]; ok {
+			enemySocket.WriteMessage(websocket.TextMessage, m.Body)
+		} else {
+			// log.Printf("enemyId is %s\n", enemyID)
+		}
+		playerToSocketMapLock.RUnlock()
+		return nil
+	}))
+	nsqlookupds := os.Getenv("NSQLOOKUPDS")
+	nsqConsumer.ConnectToNSQLookupds(strings.Split(nsqlookupds, ","))
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
-	defer clearPlayer(playerID, channel, c)
-	lock.Lock()
-	log.Printf("the player id: %s", playerID)
+	playerToSocketMapLock.Lock()
 	playerToSocketMap[playerID] = c
-	lock.Unlock()
+	playerToSocketMapLock.Unlock()
+
+	defer nsqConsumer.Stop()
 
 	for {
 		_, message, err := c.ReadMessage()
 		if err != nil {
 			break
 		}
-		redisLock.Lock()
-		redisClient := getRedisForPlayer(playerID)
-		_, err = redisClient.Do("PUBLISH", channel, message)
-		redisLock.Unlock()
+		parts := strings.Split(string(message), ",")
+		enemyID := parts[0]
+		enemyTopic := fmt.Sprintf("%s.messages", enemyID)
+		err = nsqProducer.Publish(enemyTopic, message)
 		if err != nil {
 			log.Printf(err.Error())
 			break
@@ -66,59 +71,15 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getRedisForPlayer(playerID string) redis.Conn {
-	server, _ := ring.GetNode(playerID)
-	return redisClients[server]
-}
-
-func getRedisPubSubForPlayer(playerID string) *redis.PubSubConn {
-	server, _ := ring.GetNode(playerID)
-	return redisPubSubClients[server]
-}
-
-func receiveFromRedis(redisURL string) {
-	redisPubSubClient, err := redis.DialURL(redisURL)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	defer redisPubSubClient.Close()
-	redisPubSub := &redis.PubSubConn{Conn: redisPubSubClient}
-	redisPubSubClients[redisURL] = redisPubSub
-	for {
-		switch v := redisPubSub.Receive().(type) {
-		case redis.Message:
-			parts := strings.Split(string(v.Data), ",")
-			enemyID := parts[0]
-			lock.RLock()
-			if enemySocket, ok := playerToSocketMap[enemyID]; ok {
-				enemySocket.WriteMessage(websocket.TextMessage, v.Data)
-			} else {
-				// log.Printf("enemyId is %s\n", enemyID)
-			}
-			lock.RUnlock()
-		case error:
-			log.Printf(v.Error())
-		}
-	}
-}
-
 func main() {
-	playerToSocketMap = map[string]*websocket.Conn{}
-	redisClients = map[string]redis.Conn{}
-	redisPubSubClients = map[string]*redis.PubSubConn{}
-	http.HandleFunc("/", wsHandler)
+	nsqdAddr := os.Getenv("NSQD_ADDR")
+	nsqConfig := nsq.NewConfig()
+	nsqConfig.Set("max_in_flight", 200)
 	var err error
-	redisURLs := strings.Split(os.Getenv("REDIS_URL"), ",")
-	ring = hashring.New(redisURLs)
-	for _, redisURL := range redisURLs {
-		go receiveFromRedis(redisURL)
-		redisClient, err := redis.DialURL(redisURL)
-		if err != nil {
-			log.Println(err.Error())
-		}
-		redisClients[redisURL] = redisClient
-		defer redisClient.Close()
-	}
+	nsqProducer, err = nsq.NewProducer(nsqdAddr, nsqConfig)
+	defer nsqProducer.Stop()
+	playerToSocketMap = map[string]*websocket.Conn{}
+	http.HandleFunc("/", wsHandler)
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		panic(fmt.Sprintf("ListenAndServe: %s", err.Error()))

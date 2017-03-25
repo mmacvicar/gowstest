@@ -1,5 +1,5 @@
 {
-    "memo": "7f039d3eb81558b717b7cd3af04c689ac0bf81429097f1ccf6521ca64e581702",
+    "memo": "e27d0c0429b0fa98a7c71e1ca6f4515638416a8ee49330f50e94566db944b2c6",
     "projects": [
         {
             "name": "github.com/garyburd/redigo",
@@ -13,6 +13,22 @@
             "name": "github.com/gorilla/websocket",
             "version": "v1.1.0",
             "revision": "3ab3a8b8831546bd18fd182c20687ca853b2bb13",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/mreiferson/go-snappystream",
+            "version": "v0.2.3",
+            "revision": "028eae7ab5c4c9e2d1cb4c4ca1e53259bbe7e504",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/nsqio/go-nsq",
+            "version": "v1.0.6",
+            "revision": "d71fb89c9e0263aaed89645b0b168e11ccf597b1",
             "packages": [
                 "."
             ]
