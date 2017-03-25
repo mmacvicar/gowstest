@@ -1,14 +1,6 @@
 {
-    "memo": "e27d0c0429b0fa98a7c71e1ca6f4515638416a8ee49330f50e94566db944b2c6",
+    "memo": "c35be2970cc1173eea2215a0e7d1e0710a9ea2ad6c43f020a54c2aac653606f1",
     "projects": [
-        {
-            "name": "github.com/garyburd/redigo",
-            "version": "v1.0.0",
-            "revision": "8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13",
-            "packages": [
-                "redis"
-            ]
-        },
         {
             "name": "github.com/gorilla/websocket",
             "version": "v1.1.0",
@@ -29,14 +21,6 @@
             "name": "github.com/nsqio/go-nsq",
             "version": "v1.0.6",
             "revision": "d71fb89c9e0263aaed89645b0b168e11ccf597b1",
-            "packages": [
-                "."
-            ]
-        },
-        {
-            "name": "github.com/serialx/hashring",
-            "branch": "master",
-            "revision": "b686d66ce08cf020eda4758a8e42ccdbe8ff8481",
             "packages": [
                 "."
             ]
