@@ -232,7 +232,10 @@ func receiveFromRedis(redisURL string) {
 	defer redisPubSubClient.Close()
 
 	redisPubSub := &redis.PubSubConn{Conn: redisPubSubClient}
+	redisPubSubLock.Lock()
 	redisPubSubClients[redisURL] = redisPubSub
+	redisPubSubLock.Unlock()
+
 	for {
 		switch v := redisPubSub.Receive().(type) {
 		case redis.Message:
